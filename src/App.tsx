@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { supabase } from "./utils/supabase";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
+import AudioVisualizer from "./component/AudioVisualizer";
 
 // Upload file using standard upload
 async function uploadFile(file: File) {
@@ -22,6 +23,22 @@ async function uploadFile(file: File) {
   }
   console.log(data);
 }
+
+// async function RemoveFile(file: File) {
+//     const { data, error } = await supabase
+//       .from('vibe')
+//       .delete()
+//       .eq('id', file.id)
+  
+//     if (error) {
+//       console.error('Error deleting record:', error)
+//     } else {
+//       console.log('Record deleted successfully!')
+//     }
+  
+// }
+
+
 
 export default function App() {
   const [files, setFiles] = useState<
@@ -70,6 +87,13 @@ export default function App() {
               >
                 {file.name}
               </a>
+              <audio controls>
+                <source src={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`} type="audio/wav"></source>
+                <source src={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`} type="audio/svg"></source>
+                Your browser does not support the audio element.
+              </audio>
+              <AudioVisualizer value={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`}></AudioVisualizer>
+              {/* <button onClick={}>x</button> */}
             </li>
           ))}
         </ul>
