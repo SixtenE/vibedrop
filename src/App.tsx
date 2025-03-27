@@ -1,18 +1,20 @@
 import "./App.css";
 import { useDropzone } from "react-dropzone";
-import { createClient } from "@supabase/supabase-js";
-
-// Create Supabase client
-const supabase = createClient(
-  "https://nbodsrunndqzztsvilcc.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2RzcnVubmRxenp0c3ZpbGNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2MTgyMDUsImV4cCI6MjA1MzE5NDIwNX0.mYnhoewTWWhA47PtEMXiqW9bx6zTkQN19GKCoQjGzk8"
-);
+import { supabase } from "./utils/supabase";
+import { nanoid } from "nanoid";
+import { useEffect, useState } from "react";
 
 // Upload file using standard upload
 async function uploadFile(file: File) {
-  const { data, error } = await supabase.storage
-    .from("vibe")
-    .upload("charles", file);
+  console.log(file);
+  const id = nanoid();
+
+  const { data, error } = await supabase.storage.from("vibe").upload(id, file, {
+    cacheControl: "3600",
+    upsert: true,
+    //svg type
+    contentType: file.type,
+  });
   if (error) {
     // Handle error
   } else {
@@ -22,11 +24,33 @@ async function uploadFile(file: File) {
 }
 
 export default function App() {
-  const { acceptedFiles, getRootProps, getInputProps } = useDropzone();
+  const [files, setFiles] = useState<
+    {
+      name: string;
+      bucket_id: string;
+      owner: string;
+      id: string;
+      updated_at: string;
+      created_at: string;
+      last_accessed_at: string;
+    }[]
+  >([]);
 
-  const files = acceptedFiles.map((file) => (
-    <li key={file.path}>{`${file.path} - ${file.size} bytes`}</li>
-  ));
+  const { getRootProps, getInputProps } = useDropzone({
+    onDropAccepted: (files) => {
+      uploadFile(files[0]);
+    },
+  });
+
+  async function logFiles() {
+    const { data, error } = await supabase.storage.from("vibe").list();
+    if (error) return console.log(error);
+    setFiles(data);
+  }
+
+  useEffect(() => {
+    logFiles();
+  }, []);
 
   return (
     <section className="container">
@@ -36,16 +60,20 @@ export default function App() {
       </div>
       <aside>
         <h4>Files</h4>
-        <ul>{files}</ul>
+        <ul>
+          {files.map((file) => (
+            <li key={file.id}>
+              <a
+                href={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {file.name}
+              </a>
+            </li>
+          ))}
+        </ul>
       </aside>
-      <button
-        disabled={acceptedFiles.length === 0}
-        onClick={async () => {
-          uploadFile(acceptedFiles[0]);
-        }}
-      >
-        Upload
-      </button>
     </section>
   );
 }
