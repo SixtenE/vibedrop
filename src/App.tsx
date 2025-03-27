@@ -1,27 +1,28 @@
 import "./App.css";
 import { useDropzone } from "react-dropzone";
 import { supabase } from "./utils/supabase";
-import { nanoid } from "nanoid";
+// import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
+import { main } from "./utils/s3";
 
 // Upload file using standard upload
-async function uploadFile(file: File) {
-  console.log(file);
-  const id = nanoid();
+// async function uploadFile(file: File) {
+//   console.log(file);
+//   const id = nanoid();
 
-  const { data, error } = await supabase.storage.from("vibe").upload(id, file, {
-    cacheControl: "3600",
-    upsert: true,
-    //svg type
-    contentType: file.type,
-  });
-  if (error) {
-    // Handle error
-  } else {
-    // Handle success
-  }
-  console.log(data);
-}
+//   const { data, error } = await supabase.storage.from("vibe").upload(id, file, {
+//     cacheControl: "3600",
+//     upsert: true,
+//     //svg type
+//     contentType: file.type,
+//   });
+//   if (error) {
+//     // Handle error
+//   } else {
+//     // Handle success
+//   }
+//   console.log(data);
+// }
 
 export default function App() {
   const [files, setFiles] = useState<
@@ -37,15 +38,16 @@ export default function App() {
   >([]);
 
   const { getRootProps, getInputProps } = useDropzone({
-    onDropAccepted: (files) => {
-      uploadFile(files[0]);
+    onDropAccepted: async (files) => {
+      await main(files[0]);
+      logFiles();
     },
   });
 
   async function logFiles() {
     const { data, error } = await supabase.storage.from("vibe").list();
     if (error) return console.log(error);
-    setFiles(data);
+    setFiles(data.sort((a, b) => (a.created_at > b.created_at ? -1 : 1)));
   }
 
   useEffect(() => {
@@ -61,17 +63,16 @@ export default function App() {
       <aside>
         <h4>Files</h4>
         <ul>
-          {files.map((file) => (
-            <li key={file.id}>
-              <a
-                href={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {file.name}
-              </a>
-            </li>
-          ))}
+          {files
+            .filter((files) => files.name !== ".emptyFolderPlaceholder")
+            .map((file) => (
+              <li key={file.id}>
+                <img
+                  src={`https://nbodsrunndqzztsvilcc.supabase.co/storage/v1/object/public/vibe//${file.name}`}
+                  alt={file.name}
+                />
+              </li>
+            ))}
         </ul>
       </aside>
     </section>
